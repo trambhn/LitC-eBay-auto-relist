@@ -60,7 +60,13 @@
   .sw .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.3);}
   .sw.on .knob{left:18px;}
   .tline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-  .help{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;cursor:help;}
+  .help{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;cursor:help;}
+  .help .tip-pop{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);width:340px;max-width:78vw;background:#172B4D;color:#fff;font-size:12.5px;font-weight:400;line-height:1.55;text-align:left;padding:11px 13px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;visibility:hidden;transition:opacity .12s;z-index:60;pointer-events:none;}
+  .help .tip-pop b{font-weight:600;}
+  .help .tip-pop .opt{display:block;margin-top:5px;}
+  .help .tip-pop .nb{display:block;margin-top:8px;color:#C7D2E0;font-size:12px;}
+  .help .tip-pop::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#172B4D;}
+  .help:hover .tip-pop{opacity:1;visibility:visible;}
 
   .smaller{font-size:12.5px;color:var(--muted);}
   .note{font-size:13px;color:var(--muted);line-height:1.6;max-width:700px;}
@@ -159,7 +165,7 @@
         </div>
 
         <div class="row">
-          <div class="lbl">All Product Quantity <span class="help" title="This is the product's quantity shown on the All Products tab in LitCommerce — your source-of-truth stock, not the quantity on the eBay listing.">?</span></div>
+          <div class="lbl">All Product Quantity <span class="help">?<span class="tip-pop">Sets the stock condition an ended listing must meet before it is relisted. The quantity checked is the value on the <b>All Products tab</b> in LitCommerce — your source-of-truth stock — not the quantity on the eBay listing.<span class="opt"><b>More or equal to:</b> relist only when stock is at or above the number you set.</span><span class="opt"><b>Between a range:</b> relist only when stock is within the min–max range.</span><span class="opt"><b>Any:</b> relist regardless of stock, even at 0 — with an optional minimum-quantity floor to keep the listing from ending.</span></span></span></div>
           <div class="ctl">
             <div class="tline">
               <select id="prodQty" style="min-width:240px;">
@@ -196,6 +202,16 @@
             </div>
           </div>
         </div>
+
+        <div class="row">
+          <div class="lbl">Relist manually-ended listings <span class="help">?<span class="tip-pop">Decides whether listings you ended yourself from LitCommerce are eligible for auto-relist.<span class="opt"><b>Disabled (default):</b> manually-ended listings are skipped, so items you deliberately took down won&rsquo;t reappear.</span><span class="opt"><b>Enabled:</b> manually-ended listings are relisted along with those that ended on their own — sold out or expired.</span><span class="nb">Note: applies only to listings ended through LitCommerce. Listings ended directly on eBay&rsquo;s site may not sync back, so they can&rsquo;t be detected here.</span></span></span></div>
+          <div class="ctl">
+            <div class="tline">
+              <div class="sw" id="sw-manual"><div class="knob"></div></div>
+              <span style="font-size:14px;" id="lbl-manual">Disabled</span>
+            </div>
+          </div>
+        </div>
         </div><!-- /#conditions -->
 
       </div>
@@ -210,7 +226,7 @@
 
 <script>
 (function(){
-  var st={def:false,max:true,enabled:true,minqty:false};
+  var st={def:false,max:true,enabled:true,minqty:false,manual:false};
   function bind(id,key,onLbl,offLbl){
     var el=document.getElementById(id); if(!el) return;
     el.addEventListener('click',function(){
@@ -244,6 +260,7 @@
   });
   document.getElementById('sw-default').addEventListener('click',function(){st.def=!st.def;this.classList.toggle('on',st.def);});
   bind('sw-max','max');
+  bind('sw-manual','manual','Enabled','Disabled');
   document.getElementById('prodQty').addEventListener('change',refresh);
   refresh();
 })();
