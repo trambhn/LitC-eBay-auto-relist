@@ -1,0 +1,11 @@
+{
+  "name": "auto-relist-template",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LitCommerce eBay Auto Relist Template — interactive UI mockup. Static HTML/CSS/JS, no build step.",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "license": "UNLICENSED"
+}

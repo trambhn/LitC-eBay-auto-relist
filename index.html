@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LitCommerce — Add eBay Auto Relist Template</title>
+<style>
+  :root{
+    --blue:#1972F5;--blue-dark:#0052CC;--ink:#172B4D;--muted:#5E6C84;
+    --bg:#F4F5F7;--line:#E4E7EB;--band:#EEF0F3;--paper:#FFFFFF;
+    --navbg:#FFFFFF;--navactive:#EAF1FF;--req:#E53238;
+    --warnbg:#FFF8E6;--warnbd:#FFE08A;--warnink:#946200;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;}
+  .shell{display:flex;min-height:100vh;}
+
+  /* left nav (simplified, to anchor context) */
+  .nav{width:240px;flex:0 0 240px;background:var(--navbg);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 0;}
+  .brand{display:flex;align-items:center;gap:8px;padding:4px 16px 14px;}
+  .brand .logo{width:30px;height:30px;border-radius:6px;background:#E9F0FF;display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:18px;}
+  .brand .bt{font-size:12.5px;font-weight:700;line-height:1.2;color:#3a4a63;}
+  .store{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:14px;font-weight:600;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .navitem{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13.5px;color:#5b6b82;cursor:default;}
+  .navitem .material-ico{font-size:18px;color:#9AA5B1;}
+  .navitem.active{background:var(--navactive);color:var(--blue);font-weight:600;}
+  .navsub{padding:7px 16px 7px 40px;font-size:13px;color:#7a8aa0;}
+
+  /* drawer overlay */
+  .overlay{flex:1;position:relative;background:rgba(23,43,77,.38);}
+  .ghost{position:absolute;inset:0;padding:24px 32px;color:#9AA5B1;font-size:22px;font-weight:700;opacity:.25;pointer-events:none;}
+  .drawer{position:absolute;top:0;right:0;bottom:0;left:56px;background:var(--paper);display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.12);}
+
+  .dhead{display:flex;align-items:center;gap:14px;padding:18px 32px;border-bottom:1px solid var(--line);}
+  .dhead .x{font-size:24px;color:#8A94A6;cursor:pointer;line-height:1;}
+  .dhead h1{font-size:22px;font-weight:600;}
+
+  .dbody{flex:1;overflow:auto;padding:8px 0 24px;}
+  .row{display:flex;align-items:flex-start;padding:14px 32px;}
+  .row .lbl{width:200px;flex:0 0 200px;text-align:right;padding:8px 24px 0 0;font-size:14px;font-weight:600;color:#3a4a63;}
+  .row .lbl .req{color:var(--req);margin-left:2px;}
+  .row .ctl{flex:1;min-width:0;}
+  .helper{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.55;max-width:680px;}
+
+  .band{background:var(--band);padding:13px 32px;font-size:15px;font-weight:600;color:#3a4a63;margin-top:8px;}
+
+  .chanchip{display:inline-flex;align-items:center;gap:10px;padding:6px 0;font-size:14px;}
+  .chanlogo{width:42px;height:26px;border-radius:4px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+  .chanlogo .e{color:#E53238;}.chanlogo .b{color:#0064D2;}.chanlogo .a{color:#F5AF02;}.chanlogo .y{color:#86B817;}
+
+  input[type=text],input[type=number],select{font-family:inherit;font-size:14px;color:var(--ink);border:1px solid #C7CFDA;border-radius:6px;padding:9px 11px;background:#fff;outline:none;}
+  input[type=text]{width:100%;max-width:680px;}
+  input[type=number]{width:90px;}
+  select{min-width:230px;}
+  input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(25,114,245,.12);}
+  input:disabled{background:#F1F3F6;color:#A5ADBA;}
+
+  .sw{position:relative;width:38px;height:22px;flex:0 0 38px;border-radius:11px;background:#C1C7D0;cursor:pointer;transition:background .15s;display:inline-block;vertical-align:middle;}
+  .sw.on{background:var(--blue);}
+  .sw .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.3);}
+  .sw.on .knob{left:18px;}
+  .tline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .help{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;cursor:help;}
+
+  .smaller{font-size:12.5px;color:var(--muted);}
+  .note{font-size:13px;color:var(--muted);line-height:1.6;max-width:700px;}
+  .tip{display:flex;align-items:flex-start;gap:7px;font-size:12.5px;color:var(--muted);line-height:1.55;max-width:700px;margin-top:4px;}
+
+  .alert-warn{background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warnink);border-radius:8px;padding:12px 14px;margin-top:14px;max-width:680px;}
+  .muteflag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;font-size:11px;font-weight:600;background:#FFF4D6;color:var(--warnink);}
+
+  .dfoot{display:flex;justify-content:flex-end;gap:12px;padding:14px 32px;border-top:1px solid var(--line);background:#FAFBFC;}
+  .btn{font-family:inherit;font-weight:600;font-size:14px;border-radius:6px;border:1px solid transparent;cursor:pointer;padding:9px 22px;}
+  .btn-cancel{background:#EEF0F3;color:#3a4a63;}
+  .btn-save{background:var(--blue);color:#fff;}
+  .hidden{display:none;}
+  .material-ico{font-family:'Material Icons';}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- LEFT NAV (context) -->
+  <aside class="nav">
+    <div class="brand"><div class="logo">&#9729;</div><div class="bt">Marketplace<br>Integration</div></div>
+    <div class="store">&#9729; AydansUniqueFinds &#9662;</div>
+    <div class="navitem"><span class="material-ico">&#9783;</span> Dashboard</div>
+    <div class="navitem"><span class="material-ico">&#9729;</span> All Products</div>
+    <div class="navitem"><span class="material-ico">&#9776;</span> Add/Manage Sales Channels</div>
+    <div class="navsub">Ebay</div>
+    <div class="navitem"><span class="material-ico">&#9201;</span> Automated Listings</div>
+    <div class="navitem"><span class="material-ico">&#128722;</span> Orders</div>
+    <div class="navitem active"><span class="material-ico">&#128196;</span> Templates &amp; Rules</div>
+    <div class="navitem"><span class="material-ico">&#9819;</span> Subscription Plan</div>
+  </aside>
+
+  <!-- DRAWER OVER DIMMED PAGE -->
+  <div class="overlay">
+    <div class="ghost">Listing Templates &amp; Rules</div>
+
+    <section class="drawer">
+      <div class="dhead">
+        <span class="x">&times;</span>
+        <h1>Add eBay Auto Relist Template</h1>
+      </div>
+
+      <div class="dbody">
+
+        <!-- identity -->
+        <div class="row">
+          <div class="lbl">Sales Channel</div>
+          <div class="ctl">
+            <span class="chanchip"><span class="chanlogo"><span class="e">e</span><span class="b">b</span><span class="a">a</span><span class="y">y</span></span> Ebay</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="lbl">Template Name<span class="req">*</span></div>
+          <div class="ctl"><input type="text" placeholder="e.g. Restock relist — collectibles" /></div>
+        </div>
+
+        <div class="row">
+          <div class="lbl">Choose as default</div>
+          <div class="ctl">
+            <div class="tline">
+              <div class="sw" id="sw-default"><div class="knob"></div></div>
+              <span class="help" title="When on, this template is applied automatically to all new eBay listings on this channel.">?</span>
+            </div>
+            <div class="helper">Apply this relist policy automatically to all new eBay listings. You can also assign it to specific products with Template Rules.</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="lbl">Auto relist</div>
+          <div class="ctl">
+            <div class="tline">
+              <div class="sw on" id="sw-enabled"><div class="knob"></div></div>
+              <span style="font-size:14px;" id="lbl-enabled">Enabled</span>
+            </div>
+            <div class="helper" id="enabled-note">Relist conditions below will run for listings using this template.</div>
+            <div class="helper hidden" id="disabled-note">Auto relist is turned off for this template. Apply it to listings you want to <b>exclude</b> from auto-relisting — those listings will not be relisted even when the channel-level Auto Relist setting is on.</div>
+          </div>
+        </div>
+
+        <!-- CONDITIONS WRAPPER -->
+        <div id="conditions">
+        <!-- RELIST CONDITIONS -->
+        <div class="band">Relist Conditions</div>
+
+        <div class="row">
+          <div class="lbl">Listing status</div>
+          <div class="ctl">
+            <select id="listingStatus">
+              <option value="unsold">Unsold</option>
+              <option value="sold">Sold</option>
+              <option value="any">Any Status</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="lbl">All Product Quantity <span class="help" title="This is the product's quantity shown on the All Products tab in LitCommerce — your source-of-truth stock, not the quantity on the eBay listing.">?</span></div>
+          <div class="ctl">
+            <div class="tline">
+              <select id="prodQty" style="min-width:240px;">
+                <option value="gte">More or equal to</option>
+                <option value="between">Between a range</option>
+                <option value="any">Any</option>
+              </select>
+              <span id="prodQty-val" class="tline">
+                <input type="number" min="0" value="1" id="qtyMin" />
+                <span class="smaller" id="qtyTo" style="display:none;">to</span>
+                <input type="number" min="0" value="10" id="qtyMax" style="display:none;" />
+                <span class="smaller">units on the All Products tab</span>
+              </span>
+            </div>
+            <div class="hidden" id="any-min" style="margin-top:12px;">
+              <div class="tline">
+                <div class="sw" id="sw-minqty"><div class="knob"></div></div>
+                <span style="font-size:14px;">Set a minimum quantity of</span>
+                <input type="number" min="1" value="1" id="minQty" disabled />
+                <span style="font-size:14px;color:var(--muted);">to keep this listing from ending when stock reaches 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="lbl">Max relist</div>
+          <div class="ctl">
+            <div class="tline">
+              <div class="sw on" id="sw-max"><div class="knob"></div></div>
+              <span style="font-size:14px;">Limit relists per listing to</span>
+              <input type="number" min="1" value="8" id="maxN" />
+              <span style="font-size:14px;color:var(--muted);">times</span>
+            </div>
+          </div>
+        </div>
+        </div><!-- /#conditions -->
+
+      </div>
+
+      <div class="dfoot">
+        <button class="btn btn-cancel">Cancel</button>
+        <button class="btn btn-save">Save</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var st={def:false,max:true,enabled:true,minqty:false};
+  function bind(id,key,onLbl,offLbl){
+    var el=document.getElementById(id); if(!el) return;
+    el.addEventListener('click',function(){
+      st[key]=!st[key]; el.classList.toggle('on',st[key]);
+      if(onLbl){var l=document.getElementById('lbl-'+key); if(l) l.textContent=st[key]?onLbl:offLbl;}
+      refresh();
+    });
+  }
+  function refresh(){
+    var op=document.getElementById('prodQty').value;
+    var any=op==='any', between=op==='between';
+    document.getElementById('prodQty-val').style.display=any?'none':'inline-flex';
+    document.getElementById('qtyTo').style.display=between?'inline':'none';
+    document.getElementById('qtyMax').style.display=between?'inline-block':'none';
+    document.getElementById('any-min').classList.toggle('hidden',!any);
+    document.getElementById('minQty').disabled=!st.minqty;
+    document.getElementById('maxN').disabled=!st.max;
+  }
+  // master enable/disable
+  document.getElementById('sw-enabled').addEventListener('click',function(){
+    st.enabled=!st.enabled; this.classList.toggle('on',st.enabled);
+    document.getElementById('lbl-enabled').textContent=st.enabled?'Enabled':'Disabled';
+    document.getElementById('conditions').classList.toggle('hidden',!st.enabled);
+    document.getElementById('enabled-note').classList.toggle('hidden',!st.enabled);
+    document.getElementById('disabled-note').classList.toggle('hidden',st.enabled);
+  });
+  // minimum-quantity sub-toggle (shown when Any)
+  document.getElementById('sw-minqty').addEventListener('click',function(){
+    st.minqty=!st.minqty; this.classList.toggle('on',st.minqty);
+    document.getElementById('minQty').disabled=!st.minqty;
+  });
+  document.getElementById('sw-default').addEventListener('click',function(){st.def=!st.def;this.classList.toggle('on',st.def);});
+  bind('sw-max','max');
+  document.getElementById('prodQty').addEventListener('change',refresh);
+  refresh();
+})();
+</script>
+</body>
+</html>
